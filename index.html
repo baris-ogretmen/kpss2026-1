@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#f0f9ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Barış Akademi Atölyesi - Full Müfredat</title>
+    
+    <!-- React & Tailwind -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, query, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        window.firebaseModules = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, getFirestore, collection, doc, setDoc, getDoc, onSnapshot, query, addDoc, updateDoc, deleteDoc, serverTimestamp };
+    </script>
+
+    <style>
+        body { font-family: 'Nunito', sans-serif; background-color: #f0f9ff; -webkit-tap-highlight-color: transparent; }
+        h1, h2, h3, .brand-font { font-family: 'Fredoka', sans-serif; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .message-bubble { max-width: 90%; padding: 12px 16px; border-radius: 12px; margin-bottom: 8px; line-height: 1.6; }
+        .smooth-scroll { -webkit-overflow-scrolling: touch; }
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .flip-card-inner { transition: transform 0.6s; }
+        .flipped .flip-card-inner { transform: rotateY(180deg); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: .7; } }
+        .animate-pulse-slow { animation: pulse-slow 2s infinite; }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="flex h-screen items-center justify-center bg-blue-50 flex-col gap-4">
+            <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <p class="text-blue-600 font-bold animate-pulse">Barış Akademi Yükleniyor...</p>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'baris-akademi-full-curriculum-v1';
+        
+        // --- API KEY (BOŞ) ---
+        const DEFAULT_API_KEY = ""; 
+
+        // --- ICONS (SVG) ---
+        const Icon = ({ name, size=20, className }) => {
+            const icons = {
+                Home: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+                List: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+                BookOpen: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+                Target: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+                Play: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+                Tool: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>,
+                Brain: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>,
+                Check: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+                Trash: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+                FileText: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+                Clock: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+                Sparkles: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.9 14.9L12 12l2.1 2.9L17 12l-2.9 2.1L12 17l-2.1-2.9L7 12z"/><path d="M10 2l2 4 2-4 4-2-4-2-2-4-2 4-4 2 4 2z"/><path d="M22 10l-4 2 4 2 2-4-2-4z"/></svg>,
+                Rotate: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>,
+                Send: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+                Key: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>,
+                Calculator: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>,
+                Timer: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+                Edit3: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+                Globe: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+                HelpCircle: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+                Lightbulb: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>,
+                AlertCircle: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            };
+            return icons[name] || null;
+        };
+
+        // --- DATA ---
+        const quotes = ["Bugün çalış, yarın kazan.", "Hedefine odaklan.", "İnanmak başarmanın yarısıdır.", "Kazanmak için buradasın!", "15 yıllık emeğin karşılığını alma vakti.", "Her gün küçük bir adım, büyük zafere götürür."];
+        
+        // GÜNCELLENMİŞ VE GENİŞLETİLMİŞ MÜFREDAT
+        const fullCurriculum = {
+            OABT: [
+                { subject: "Okul Öncesi Eğitime Giriş", subtopics: ["Tanım, Amaç ve İlkeler", "Eğitim Kuramcıları (Froebel, Montessori, Piaget, Vygotsky, Bruner)", "Türkiye'de ve Dünyada Tarihsel Gelişim", "Yönetmelik ve Mevzuat", "Okul Öncesi Eğitimin Temel Özellikleri"] },
+                { subject: "İnsan Anatomisi (Kaldırıldı)", subtopics: ["Müfredat dışıdır, sorumlu değilsiniz."] },
+                { subject: "Anne Çocuk Sağlığı ve İlk Yardım", subtopics: ["Kadın Üreme Sağlığı ve Aile Planlaması", "Gebelik, Doğum ve Lohusalık", "Bebek Bakımı ve Beslenmesi", "0-6 Yaş Gelişimi ve İzlenmesi", "Çocuk Hastalıkları ve Aşılar", "Temel İlk Yardım Uygulamaları", "Bulaşıcı Hastalıklar"] },
+                { subject: "Çocuk Ruh Sağlığı", subtopics: ["Ruh Sağlığının Tanımı", "Uyum ve Davranış Bozuklukları (Tırnak yeme, Alt ıslatma vb.)", "Otizm Spektrum Bozukluğu", "Dikkat Eksikliği ve Hiperaktivite", "Özel Öğrenme Güçlüğü", "İhmal ve İstismar", "Boşanma ve Çocuk", "Çocukta Cinsel Gelişim ve Eğitim"] },
+                { subject: "Erken Çocuklukta Drama", subtopics: ["Dramanın Tanımı ve Tarihçesi", "Drama Türleri (Yaratıcı, Eğitici, Psikodrama)", "Drama Aşamaları (Isınma, Canlandırma, Değerlendirme)", "Drama Teknikleri (Rol Oynama, Doğaçlama, Donuk İmge vb.)", "Liderin Özellikleri ve Rolü", "Drama Planı Hazırlama"] },
+                { subject: "Yaklaşımlar & Programlar", subtopics: ["Montessori Yaklaşımı", "Reggio Emilia Yaklaşımı", "Waldorf Yaklaşımı", "High Scope Yaklaşımı", "Bank Street", "Head Start", "PYP (İlk Yıllar Programı)", "Orman Okulları", "MEB 2013/2024 Okul Öncesi Eğitim Programı"] },
+                { subject: "Alan Eğitimi: Fen Eğitimi", subtopics: ["Fen Eğitiminin Amaçları", "Bilimsel Süreç Becerileri", "Fen Eğitiminde Yöntem ve Teknikler", "Fen Doğa Köşesi ve Materyalleri"] },
+                { subject: "Alan Eğitimi: Matematik Eğitimi", subtopics: ["Matematik Becerileri (Sınıflama, Sıralama, Eşleştirme, Örüntü)", "Sayı Kavramı ve İşlemler", "Geometrik Şekiller ve Uzamsal Algı", "Ölçme", "Matematik Eğitiminde Yöntemler"] },
+                { subject: "Alan Eğitimi: Müzik Eğitimi", subtopics: ["Müzik Eğitiminin Önemi ve Amaçları", "Müzik Etkinlikleri (Ses Dinleme, Şarkı Söyleme, Ritim)", "Müzik Öğretim Yöntemleri (Orff, Kodaly, Dalcroze, Suzuki)", "Çocuk Şarkıları ve Seçimi"] },
+                { subject: "Alan Eğitimi: Görsel Sanatlar", subtopics: ["Çocuk Resminin Gelişim Evreleri (Karalama, Şema öncesi vb.)", "Sanat Etkinlikleri ve Yaratıcılık", "Sanat Eğitiminde Yöntemler", "Materyal Kullanımı ve Teknikler"] },
+                { subject: "Alan Eğitimi: Beden Eğitimi ve Oyun", subtopics: ["Psikomotor Gelişim ve Hareket Eğitimi", "Oyunun Tanımı ve Kuramları", "Oyun Evreleri (Parten, Piaget, Smilansky)", "Oyun Materyalleri"] },
+                { subject: "Çocuk Edebiyatı", subtopics: ["Çocuk Edebiyatının Tanımı ve Önemi", "Çocuk Kitaplarının Özellikleri (İç ve Dış Yapı)", "Edebi Türler (Masal, Hikaye, Şiir, Tekerleme, Bilmece)", "Dil Gelişimi ve Kitap İlişkisi", "Resimli Çocuk Kitapları"] },
+                { subject: "Özel Eğitim ve Kaynaştırma", subtopics: ["Özel Eğitimin Tanımı ve İlkeleri", "Engel Grupları (Zihinsel, İşitme, Görme vb.)", "Kaynaştırma Eğitimi ve Destek Özel Eğitim Hizmetleri", "Bireyselleştirilmiş Eğitim Programı (BEP)", "Erken Müdahale"] },
+                { subject: "Yaratıcılık", subtopics: ["Yaratıcılık Kuramları", "Yaratıcı Düşünme Süreci", "Yaratıcılığı Engelleyen ve Destekleyen Faktörler", "Çocukta Yaratıcılığın Gelişimi"] },
+                { subject: "İlköğretime Hazırlık", subtopics: ["Okul Olgunluğu", "İlkokula Hazırlık Becerileri", "Okuma Yazmaya Hazırlık Çalışmaları", "Ailenin Rolü"] },
+                { subject: "Anne Baba Eğitimi", subtopics: ["Aile Eğitimi Modelleri", "Aile Katılımı Çalışmaları", "Anne Baba Tutumları", "İletişim Becerileri"] }
+            ],
+            Egitim: [
+                { subject: "Gelişim Psikolojisi", subtopics: ["Gelişimin Temel Kavramları", "Fiziksel ve Psikomotor Gelişim", "Bilişsel Gelişim (Piaget, Vygotsky, Bruner)", "Kişilik Gelişimi (Freud, Erikson, Rogers)", "Ahlak Gelişimi (Kohlberg, Piaget)", "Dil Gelişimi"] },
+                { subject: "Öğrenme Psikolojisi", subtopics: ["Öğrenmeyi Etkileyen Faktörler", "Davranışçı Kuramlar (Klasik, Edimsel)", "Bilişsel Ağırlıklı Davranışçı (Bandura)", "Bilişsel Kuramlar (Gestalt, Bilgiyi İşleme)", "Hümanist Yaklaşım"] },
+                { subject: "ÖYT", subtopics: ["Öğretim İlkeleri", "Öğretim Modelleri (Tam Öğrenme, Yapılandırmacılık vb.)", "Öğretim Stratejileri (Sunuş, Buluş, Araştırma)", "Öğretim Yöntemleri", "Öğretim Teknikleri", "Kavram Öğretimi"] },
+                { subject: "Program Geliştirme", subtopics: ["Eğitimde Temel Kavramlar", "Program Türleri", "Program Geliştirme Süreci", "Program Tasarım Yaklaşımları", "Hedef, İçerik, Eğitim Durumları, Sınama"] },
+                { subject: "Ölçme ve Değerlendirme", subtopics: ["Ölçmede Temel Kavramlar", "Hata Türleri", "Ölçme Araçlarının Özellikleri (Güvenirlik, Geçerlik)", "Ölçme Araçları (Testler)", "İstatistiksel İşlemler"] },
+                { subject: "Rehberlik ve Özel Eğitim", subtopics: ["Rehberlik İlkeleri", "Rehberlik Türleri", "Hizmet Alanları", "Bireyi Tanıma Teknikleri", "Psikolojik Danışma Kuramları", "Özel Eğitim Hizmetleri"] },
+                { subject: "Sınıf Yönetimi", subtopics: ["Sınıf Yönetimi Modelleri", "Sınıfın Fiziksel Düzeni", "İstenmeyen Davranışlar", "Sınıf Kuralları"] },
+                { subject: "Materyal Tasarımı", subtopics: ["Materyal Tasarım İlkeleri", "Görsel Tasarım Ögeleri", "Eğitimde Teknoloji Kullanımı"] }
+            ],
+            AGS: [
+                { subject: "Türkçe", subtopics: ["Sözcükte Anlam", "Cümlede Anlam", "Paragraf Bilgisi", "Sözel Mantık", "Yazım Kuralları", "Noktalama İşaretleri", "Dil Bilgisi"] },
+                { subject: "Matematik", subtopics: ["Temel Kavramlar", "Sayı Basamakları", "Rasyonel Sayılar", "Üslü-Köklü Sayılar", "Problemler", "Sayısal Mantık", "Geometri"] },
+                { subject: "Tarih", subtopics: ["İslamiyet Öncesi Türk Tarihi", "İlk Türk İslam Devletleri", "Osmanlı Kuruluş-Yükselme", "Osmanlı Kültür Medeniyeti", "Osmanlı Dağılma", "Milli Mücadele", "Atatürk İlkeleri ve İnkılapları", "Çağdaş Türk ve Dünya Tarihi"] },
+                { subject: "Coğrafya", subtopics: ["Türkiye'nin Coğrafi Konumu", "Yer Şekilleri", "İklim ve Bitki Örtüsü", "Nüfus ve Yerleşme", "Tarım ve Hayvancılık", "Madenler ve Enerji", "Sanayi, Ulaşım, Turizm"] },
+                { subject: "Vatandaşlık", subtopics: ["Hukukun Temel Kavramları", "Anayasa Hukuku (1982)", "Yasama, Yürütme, Yargı", "İdare Hukuku", "Uluslararası Kuruluşlar", "Güncel Bilgiler"] }
+            ]
+        };
+
+        const toolsData = [
+            { id: 9, title: "API Anahtarı", desc: "ZORUNLU", iconName: "Key", type: "internal", action: "apiKey" },
+            { id: 10, title: "Soru Çözücü", desc: "AI Çözsün", iconName: "HelpCircle", type: "internal", action: "questionSolver" },
+            { id: 11, title: "Pedagojik Analiz", desc: "Durum Analizi", iconName: "Lightbulb", type: "internal", action: "pedagogySolver" },
+            { id: 1, title: "Puan Hesapla", desc: "Tahmini P121", iconName: "Calculator", type: "internal", action: "scoreCalc" },
+            { id: 2, title: "Kronometre", desc: "Süre Tut", iconName: "Timer", type: "internal", action: "timer" },
+            { id: 4, title: "Not Defteri", desc: "Hızlı notlar", iconName: "Edit3", type: "internal", action: "notepad" },
+            { id: 7, title: "MEB Müfredat", desc: "Resmi Kaynak", link: "https://tegm.meb.gov.tr/", iconName: "BookOpen" },
+            { id: 8, title: "ÖSYM AİS", desc: "Başvuru", link: "https://ais.osym.gov.tr/", iconName: "Globe" }
+        ];
+
+        // --- HELPER FUNCTIONS ---
+        const cleanAndParseJSON = (text) => {
+            if (!text) return null;
+            try {
+                let clean = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                const start = clean.indexOf('[');
+                const end = clean.lastIndexOf(']');
+                if (start !== -1 && end !== -1) {
+                    clean = clean.substring(start, end + 1);
+                    return JSON.parse(clean);
+                }
+                const startObj = clean.indexOf('{');
+                const endObj = clean.lastIndexOf('}');
+                 if (startObj !== -1 && endObj !== -1) {
+                    clean = clean.substring(startObj, endObj + 1);
+                    const obj = JSON.parse(clean);
+                    return obj.question ? [obj] : obj; 
+                }
+                return null;
+            } catch (e) {
+                console.error("JSON Parse Hatası:", e);
+                return null;
+            }
+        };
+
+        const calculateTimeRemaining = () => {
+            const kpssDate = new Date('2026-08-02T10:00:00').getTime();
+            const now = new Date().getTime();
+            const distance = kpssDate - now;
+            if (distance < 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, finished: true };
+            return {
+                days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+                hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+                minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+                seconds: Math.floor((distance % (1000 * 60)) / 1000),
+                finished: false
+            };
+        };
+
+        const getLinkUrl = (topic, type) => {
+            if (type === 'youtube') return `https://www.youtube.com/results?search_query=${encodeURIComponent(`KPSS Okul Öncesi ${topic} konu anlatımı`)}`;
+            return `https://www.google.com/search?q=${encodeURIComponent(`KPSS Okul Öncesi ${topic} ders notları pdf`)}`;
+        };
+
+        // --- COMPONENTS ---
+        const SummaryModal = ({ isOpen, onClose, content, isLoading }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+                    <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 relative max-h-[80vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><Icon name="Trash" size={20}/></button>
+                        <h3 className="text-xl font-bold text-indigo-800 mb-4 flex items-center gap-2"><Icon name="BookOpen" size={24}/> Konu Özeti</h3>
+                        {isLoading ? (
+                            <div className="flex flex-col items-center justify-center py-10">
+                                <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+                                <p className="text-gray-500 animate-pulse">Yapay zeka özet çıkarıyor...</p>
+                            </div>
+                        ) : (
+                            <div className="prose prose-sm prose-indigo text-gray-700 whitespace-pre-wrap">{content}</div>
+                        )}
+                        <button onClick={onClose} className="w-full mt-6 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200">Kapat</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const ExamPlayer = ({questions, idx, setIdx, ans, setAns, show, setShow, onFinish}) => (
+            <div className="flex flex-col h-full bg-white m-2 rounded-xl shadow overflow-hidden pb-20 md:pb-0">
+                <div className="p-4 bg-gray-50 border-b font-bold flex justify-between"><span>Soru {idx+1}/{questions.length}</span></div>
+                <div className="flex-1 p-6 overflow-y-auto">
+                    <h3 className="font-bold text-lg mb-4">{questions[idx].question}</h3>
+                    <div className="space-y-2">{questions[idx].options.map((o,i)=><button key={i} onClick={()=>setAns({...ans,[idx]:i})} className={`w-full text-left p-3 border rounded ${ans[idx]===i?'bg-indigo-50 border-indigo-500':''}`}>{o}</button>)}</div>
+                    {show && <div className={`mt-4 p-3 rounded border ${ans[idx]===questions[idx].correctIndex?'bg-green-50 border-green-200':'bg-red-50 border-red-200'}`}><p className="font-bold">{ans[idx]===questions[idx].correctIndex?'Doğru!':'Yanlış.'} Cevap: {questions[idx].options[questions[idx].correctIndex]}</p><p className="text-sm mt-1">{questions[idx].explanation}</p></div>}
+                </div>
+                <div className="p-4 border-t flex justify-between gap-2">
+                    <button onClick={()=>setIdx(Math.max(0,idx-1))} disabled={idx===0} className="px-4 py-2 bg-gray-100 rounded font-bold disabled:opacity-50">Geri</button>
+                    <button onClick={()=>setShow(!show)} className="flex-1 px-4 py-2 bg-yellow-100 text-yellow-800 rounded font-bold">Cevap</button>
+                    {idx<questions.length-1 ? <button onClick={()=>{setIdx(idx+1);setShow(false)}} className="px-4 py-2 bg-indigo-600 text-white rounded font-bold">İleri</button> : <button onClick={onFinish} className="px-4 py-2 bg-green-600 text-white rounded font-bold">Bitir</button>}
+                </div>
+            </div>
+        );
+
+        const Dashboard = ({ dailyQuote, timeRemaining, dailyTasks, completedTopics, setActiveTab }) => (
+            <div className="space-y-6 animate-fade-in p-4 pb-24 md:pb-8 h-full overflow-y-auto smooth-scroll">
+                <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+                    <div className="relative z-10">
+                        <h2 className="text-2xl font-bold mb-2">Hoş geldin Barış Hocam!</h2>
+                        <p className="text-sm opacity-90 mb-4">"{dailyQuote}"</p>
+                        <div className="flex gap-2">
+                            <button onClick={() => setActiveTab('mock')} className="bg-white text-indigo-700 px-4 py-2 rounded-xl font-bold text-sm shadow-md active:scale-95 transition">Deneme Çöz</button>
+                            <button onClick={() => setActiveTab('planner')} className="bg-indigo-500/50 text-white px-4 py-2 rounded-xl font-bold text-sm backdrop-blur-md active:scale-95 transition">Planım</button>
+                        </div>
+                    </div>
+                    <div className="absolute right-[-20px] top-[-20px] opacity-20"><Icon name="Brain" size={120}/></div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-pink-100">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-bold text-pink-700">Sınava Kalan</h3>
+                        <div className="p-2 bg-pink-50 rounded-full text-pink-500"><Icon name="Clock" size={20}/></div>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-800 text-center py-2">
+                        {timeRemaining.days} Gün <span className="text-sm text-gray-400 font-normal">{timeRemaining.hours}sa</span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100">
+                        <div className="text-sm text-emerald-600 font-bold mb-1">Görevler</div>
+                        <div className="text-3xl font-black text-gray-800">{dailyTasks.filter(t => !t.completed).length}</div>
+                        <div className="text-xs text-gray-400">Bekleyen</div>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-blue-100">
+                        <div className="text-sm text-blue-600 font-bold mb-1">Müfredat</div>
+                        <div className="text-3xl font-black text-gray-800">{Object.keys(completedTopics).length}</div>
+                        <div className="text-xs text-gray-400">Tamamlandı</div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const Syllabus = ({ completedTopics, toggleTopic, openLink, generateFlashcard, generateSummary }) => (
+            <div className="space-y-4 animate-fade-in p-4 pb-24 md:pb-8 h-full overflow-y-auto smooth-scroll">
+                <div className="p-4 rounded-2xl bg-blue-600 text-white shadow-md"><h2 className="text-xl font-bold flex items-center gap-2"><Icon name="BookOpen" size={24}/> Müfredat</h2></div>
+                {['OABT', 'AGS', 'Egitim'].map(type => (
+                    <div key={type} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="p-3 bg-gray-50 border-b font-bold text-gray-700 flex justify-between">
+                            <span>{type === 'Egitim' ? 'Eğitim Bilimleri' : type}</span>
+                            <span className="text-xs bg-gray-200 px-2 py-1 rounded">{fullCurriculum[type].length} Konu</span>
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                            {fullCurriculum[type].map((item, idx) => (
+                                <div key={idx} className="p-4">
+                                    <div className="flex items-start gap-3 mb-2">
+                                        <button onClick={() => toggleTopic(item.subject, completedTopics[item.subject])} className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition ${completedTopics[item.subject] ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}`}>
+                                            {completedTopics[item.subject] && <Icon name="Check" size={14} />}
+                                        </button>
+                                        <div className="flex-1">
+                                            <span className={`font-bold text-gray-800 block ${completedTopics[item.subject] ? 'line-through text-gray-400' : ''}`}>{item.subject}</span>
+                                            {item.subtopics && (
+                                                <ul className="pl-2 mt-1 space-y-2">
+                                                    {item.subtopics.map((sub, sIdx) => (
+                                                        <li key={sIdx} className="text-xs text-gray-600 flex justify-between items-center group bg-gray-50 p-2 rounded-lg">
+                                                            <span>{sub}</span>
+                                                            <button onClick={()=>generateSummary(sub)} className="text-indigo-500 hover:text-indigo-700 bg-white border border-indigo-200 p-1.5 rounded-md transition shadow-sm flex items-center gap-1">
+                                                                <Icon name="FileText" size={12}/> <span className="text-[10px] font-bold">Özet</span>
+                                                            </button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 pl-9 mt-3">
+                                        <a href={getLinkUrl(item.subject, 'youtube')} target="_blank" rel="noopener noreferrer" className="flex-1 bg-red-50 text-red-600 py-2 rounded-lg text-xs font-bold border border-red-100 active:bg-red-100 flex items-center justify-center gap-1 no-underline">
+                                            <Icon name="Play" size={12}/> İzle
+                                        </a>
+                                        <a href={getLinkUrl(item.subject, 'web')} target="_blank" rel="noopener noreferrer" className="flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg text-xs font-bold border border-blue-100 active:bg-blue-100 flex items-center justify-center gap-1 no-underline">
+                                            <Icon name="FileText" size={12}/> Oku
+                                        </a>
+                                        <button onClick={() => generateFlashcard(item.subject)} className="bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg border border-yellow-200 active:bg-yellow-200">
+                                            <Icon name="Sparkles" size={14}/>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+
+        const Planner = ({ dailyTasks, generateDailyTasks, toggleTask, deleteTask, isLoading }) => (
+            <div className="space-y-4 animate-fade-in p-4 pb-24 md:pb-8 h-full overflow-y-auto smooth-scroll">
+                <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-6 text-white shadow-lg flex justify-between items-center">
+                    <div><h2 className="text-xl font-bold flex items-center gap-2"><Icon name="List"/> Günlük Plan</h2></div>
+                    <button onClick={generateDailyTasks} disabled={isLoading} className="bg-white text-emerald-600 px-4 py-2 rounded-xl font-bold text-xs shadow-md active:scale-95 disabled:opacity-50">
+                        {isLoading ? '...' : '+ Görev Ekle'}
+                    </button>
+                </div>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    {dailyTasks.length === 0 ? <div className="p-8 text-center text-gray-400">Henüz görev yok.</div> : 
+                        dailyTasks.map(task => (
+                            <div key={task.id} className="p-4 border-b border-gray-100 flex items-center gap-3">
+                                <button onClick={() => toggleTask(task.id, task.completed)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300'}`}>
+                                    {task.completed && <Icon name="Check" size={14}/>}
+                                </button>
+                                <span className={`flex-1 text-sm ${task.completed ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{task.text}</span>
+                                <button onClick={() => deleteTask(task.id)} className="text-gray-300 hover:text-red-500"><Icon name="Trash" size={18}/></button>
+                            </div>
+                        ))
+                    }
+                </div>
+            </div>
+        );
+
+        const SmartTest = ({ getEffectiveKey, setActiveTab, setActiveTool, saveMistakes }) => {
+            const [step, setStep] = useState(1);
+            const [selectedCategory, setSelectedCategory] = useState(null);
+            const [selectedSubject, setSelectedSubject] = useState(null);
+            const [focusTopic, setFocusTopic] = useState("");
+            const [qCount, setQCount] = useState(5);
+            const [isLoading, setIsLoading] = useState(false);
+            const [questions, setQuestions] = useState([]);
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [answers, setAnswers] = useState({});
+            const [showResult, setShowResult] = useState(false);
+
+            const availableSubtopics = useMemo(() => {
+                if (!selectedCategory || !selectedSubject) return [];
+                const subjectData = fullCurriculum[selectedCategory].find(s => s.subject === selectedSubject);
+                return subjectData ? subjectData.subtopics : [];
+            }, [selectedCategory, selectedSubject]);
+
+            const generateTest = async () => {
+                if (!selectedCategory || !selectedSubject || !focusTopic) { alert("Lütfen tüm alanları seçiniz."); return; }
+                const apiKey = getEffectiveKey();
+                if (!apiKey) { alert("API Anahtarı bulunamadı. Lütfen Araçlar'dan ekleyin."); setActiveTab('tools'); setActiveTool('apiKey'); return; }
+                
+                setIsLoading(true);
+                const prompt = `KPSS ${selectedCategory} için '${selectedSubject}' dersinin '${focusTopic}' konusuyla ilgili ${qCount} adet zorlayıcı, yeni nesil soru hazırla. ANATOMİ YOK. Çıktı SADECE geçerli bir JSON Array formatında olmalı, markdown kullanma. Format: [{"question":"Soru metni","options":["A","B","C","D","E"],"correctIndex":0,"explanation":"Açıklama"}]`;
+                
+                try {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                    const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } }) });
+                    const data = await res.json();
+                    
+                    if (!data.candidates || !data.candidates[0].content) throw new Error("API Yanıt Vermedi");
+                    
+                    const qs = cleanAndParseJSON(data.candidates[0].content.parts[0].text);
+                    if(qs && Array.isArray(qs) && qs.length > 0) { 
+                        setQuestions(qs); 
+                        setStep(3); 
+                    } else {
+                        throw new Error("Soru formatı hatalı");
+                    }
+                } catch(e) { 
+                    alert("Soru üretilemedi: " + e.message + ". Lütfen tekrar deneyin."); 
+                } finally { 
+                    setIsLoading(false); 
+                }
+            };
+
+            const handleFinish = () => {
+                const wrongQuestions = questions.filter((q, i) => answers[i] !== q.correctIndex);
+                if (wrongQuestions.length > 0) {
+                    saveMistakes(wrongQuestions.map(q => ({
+                        question: q.question, correctAnswer: q.options[q.correctIndex], explanation: q.explanation, date: new Date()
+                    })));
+                }
+                setStep(1); setQuestions([]); setAnswers({}); setShowResult(false);
+            };
+
+            if (step === 1) return (
+                <div className="p-4 h-full overflow-y-auto pb-20">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-indigo-100">
+                        <h2 className="text-xl font-bold text-indigo-700 mb-4 flex items-center gap-2"><Icon name="Target"/> Konu Pekiştirme</h2>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">1. Alan Seç</label>
+                                <div className="flex gap-2">
+                                    {['OABT', 'Egitim', 'AGS'].map(cat => (
+                                        <button key={cat} onClick={() => {setSelectedCategory(cat); setSelectedSubject(null); setFocusTopic("");}} className={`flex-1 py-2 rounded-lg text-sm font-bold border-2 transition ${selectedCategory===cat ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-500'}`}>{cat}</button>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            {selectedCategory && (
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">2. Ders Seç</label>
+                                    <select className="w-full p-3 rounded-xl border border-gray-300 bg-white" value={selectedSubject || ""} onChange={(e) => {setSelectedSubject(e.target.value); setFocusTopic("");}}>
+                                        <option value="">Ders Seçiniz...</option>
+                                        {fullCurriculum[selectedCategory].map((s, i) => <option key={i} value={s.subject}>{s.subject}</option>)}
+                                    </select>
+                                </div>
+                            )}
+
+                            {selectedSubject && (
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">3. Konu Seç</label>
+                                    <select className="w-full p-3 rounded-xl border border-gray-300 bg-white" value={focusTopic} onChange={(e) => setFocusTopic(e.target.value)}>
+                                        <option value="">Konu Seçiniz...</option>
+                                        {availableSubtopics.map((sub, i) => <option key={i} value={sub}>{sub}</option>)}
+                                    </select>
+                                    
+                                    <div className="mt-4">
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Soru Sayısı: {qCount}</label>
+                                        <input type="range" min="3" max="20" value={qCount} onChange={(e)=>setQCount(e.target.value)} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"/>
+                                    </div>
+
+                                    <button onClick={generateTest} disabled={isLoading || !focusTopic} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl mt-4 shadow-lg hover:bg-indigo-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        {isLoading ? 'Hazırlanıyor...' : 'Testi Oluştur'} {isLoading && <span className="animate-spin">⏳</span>}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+
+            if (step === 3) return <ExamPlayer questions={questions} idx={currentIndex} setIdx={setCurrentIndex} ans={answers} setAns={setAnswers} show={showResult} setShow={setShowResult} onFinish={handleFinish} />;
+            return null;
+        };
+
+        const ExamView = ({ quizState, setQuizState, examType, setExamType, questionCount, setQuestionCount, startExam, currentQIndex, setCurrentQIndex, quizQuestions, userAnswers, setUserAnswers, getEffectiveKey, setActiveTab, setActiveTool, saveMistakes }) => {
+            const finishExam = () => {
+                const wrongQuestions = quizQuestions.filter((q, i) => userAnswers[i] !== q.correctIndex);
+                if (wrongQuestions.length > 0) saveMistakes(wrongQuestions.map(q => ({ question: q.question, correctAnswer: q.options[q.correctIndex], explanation: q.explanation, date: new Date() })));
+                setQuizState('finished');
+            };
+
+            if (quizState === 'idle') {
+                return (
+                    <div className="p-6 flex flex-col items-center justify-center h-full text-center space-y-6">
+                        <div className="bg-white p-6 rounded-3xl shadow-lg border border-indigo-50 w-full max-w-sm">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-4">Genel Deneme</h2>
+                            {!getEffectiveKey() && <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-xs font-bold border border-red-100">⚠️ Önce "Araçlar"dan API Anahtarı girmelisin.</div>}
+                            <div className="flex gap-2 mb-4 bg-gray-100 p-1 rounded-xl">
+                                <button onClick={()=>setExamType('OABT')} className={`flex-1 py-3 rounded-lg text-sm font-bold transition ${examType==='OABT'?'bg-white shadow text-indigo-600':'text-gray-500'}`}>ÖABT</button>
+                                <button onClick={()=>setExamType('AGS')} className={`flex-1 py-3 rounded-lg text-sm font-bold transition ${examType==='AGS'?'bg-white shadow text-indigo-600':'text-gray-500'}`}>AGS</button>
+                            </div>
+                            <div className="mb-6"><label className="block text-sm font-bold text-gray-700 mb-2">Soru Sayısı: {questionCount}</label><input type="range" min="5" max="50" step="5" value={questionCount} onChange={(e)=>setQuestionCount(parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"/></div>
+                            <button onClick={startExam} className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-95 disabled:opacity-50">Sınavı Başlat</button>
+                        </div>
+                    </div>
+                );
+            }
+            if (quizState === 'loading') return <div className="h-full flex flex-col items-center justify-center h-full"><div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div><p className="text-gray-500 font-bold">Sorular Hazırlanıyor...</p></div>;
+            if (quizState === 'active') return <ExamPlayer questions={quizQuestions} idx={currentQIndex} setIdx={setCurrentQIndex} ans={userAnswers} setAns={setUserAnswers} show={false} setShow={()=>{}} onFinish={finishExam} />;
+            if (quizState === 'finished') return (
+                <div className="flex flex-col h-full bg-white md:m-4 md:rounded-2xl overflow-hidden pb-20 md:pb-0">
+                    <div className="p-6 text-center border-b">
+                        <h2 className="text-3xl font-bold text-gray-800 mb-2">Bitti!</h2>
+                        <div className="text-4xl font-black text-indigo-600 mb-2">{Object.keys(userAnswers).filter(k => userAnswers[k] === quizQuestions[k].correctIndex).length} / {quizQuestions.length}</div>
+                        <p className="text-sm text-gray-500">Yanlışların kaydedildi.</p>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-6 bg-gray-50 smooth-scroll">
+                        {quizQuestions.map((q, i) => (
+                            <div key={i} className={`mb-4 p-4 rounded-xl border ${userAnswers[i] === q.correctIndex ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                                <p className="font-bold text-sm mb-2 text-gray-800">{i+1}. {q.question}</p>
+                                <div className="grid grid-cols-1 gap-1 text-xs">
+                                    <div className={`p-2 rounded ${userAnswers[i] === q.correctIndex ? 'text-green-700 font-bold' : 'text-red-700'}`}>
+                                        Senin Cevabın: {q.options[userAnswers[i]] || 'Boş'}
+                                    </div>
+                                    {userAnswers[i] !== q.correctIndex && (
+                                        <div className="p-2 rounded text-green-700 font-bold bg-green-100">
+                                            Doğru Cevap: {q.options[q.correctIndex]}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mt-2 text-xs text-gray-600 italic border-t pt-2 border-gray-200">{q.explanation}</div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="p-4 border-t bg-white shrink-0">
+                        <button onClick={()=>setQuizState('idle')} className="w-full bg-gray-800 text-white py-4 rounded-xl font-bold">Yeni Sınav</button>
+                    </div>
+                </div>
+            );
+            return null;
+        };
+
+        const MistakesView = ({ mistakes, deleteMistake }) => (
+            <div className="space-y-4 animate-fade-in p-4 pb-24 md:pb-8 h-full overflow-y-auto smooth-scroll">
+                <div className="p-4 rounded-xl bg-red-500 text-white shadow-md"><h2 className="text-xl font-bold flex items-center gap-2"><Icon name="AlertCircle" size={24}/> Hata Defteri</h2></div>
+                {mistakes.length === 0 ? <div className="text-center text-gray-400 mt-10">Henüz kaydedilmiş yanlışın yok.</div> : 
+                    mistakes.map(m => (
+                        <div key={m.id} className="bg-white p-4 rounded-xl shadow-sm border border-red-100">
+                            <p className="font-bold text-gray-800 mb-2">{m.question}</p>
+                            <div className="bg-green-50 text-green-800 p-2 rounded text-sm mb-2 font-bold">Doğru: {m.correctAnswer}</div>
+                            <p className="text-xs text-gray-500 italic mb-3">{m.explanation}</p>
+                            <button onClick={() => deleteMistake(m.id)} className="text-red-500 text-xs font-bold flex items-center gap-1"><Icon name="Trash" size={14}/> Listeden Sil</button>
+                        </div>
+                    ))
+                }
+            </div>
+        );
+
+        const Tools = ({ activeTool, setActiveTool, toolsData, userApiKey, saveApiKey, notes, saveNote, scoreInputs, setScoreInputs, calculateScore, calculatedScore, stopwatch, setIsTimerRunning, isTimerRunning, analyzeQuestion, isAnalyzing, analysisResult, analyzePedagogy }) => {
+            const [qText, setQText] = useState("");
+            const [pText, setPText] = useState("");
+
+            return (
+                <div className="space-y-4 animate-fade-in p-4 pb-24 md:pb-8 h-full overflow-y-auto smooth-scroll">
+                    <div className="p-4 rounded-xl bg-orange-500 text-white shadow-md"><h2 className="text-xl font-bold flex items-center gap-2"><Icon name="Tool" size={24}/> Araçlar</h2></div>
+                    
+                    {activeTool === 'apiKey' && (
+                        <div className="bg-white p-4 rounded-xl shadow border border-indigo-200 mb-4 animate-fade-in">
+                            <h3 className="font-bold text-indigo-700 mb-2">API Anahtarı</h3>
+                            <input type="text" value={userApiKey} onChange={(e)=>saveApiKey(e.target.value)} placeholder="AIzaSy..." className="w-full border p-2 rounded mb-2 text-sm font-mono"/>
+                            <button onClick={()=>setActiveTool(null)} className="bg-indigo-600 text-white w-full py-2 rounded font-bold">Kaydet</button>
+                        </div>
+                    )}
+                    {activeTool === 'questionSolver' && (
+                        <div className="bg-white p-4 rounded-xl shadow border border-indigo-200 mb-4 animate-fade-in">
+                            <h3 className="font-bold text-indigo-700 mb-2">AI Soru Çözücü</h3>
+                            <textarea className="w-full h-24 border p-2 rounded mb-2 text-sm" placeholder="Soruyu buraya yapıştır..." value={qText} onChange={(e)=>setQText(e.target.value)}></textarea>
+                            <button onClick={()=>analyzeQuestion(qText)} disabled={isAnalyzing} className="bg-indigo-600 text-white w-full py-2 rounded font-bold mb-2 disabled:opacity-50">{isAnalyzing ? 'Çözülüyor...' : 'Çöz ve Açıkla'}</button>
+                            {analysisResult && <div className="bg-gray-50 p-3 rounded text-sm text-gray-800 whitespace-pre-wrap max-h-60 overflow-y-auto">{analysisResult}</div>}
+                            <button onClick={()=>setActiveTool(null)} className="text-gray-500 text-sm underline w-full mt-2">Kapat</button>
+                        </div>
+                    )}
+                    {activeTool === 'pedagogySolver' && (
+                        <div className="bg-white p-4 rounded-xl shadow border border-indigo-200 mb-4 animate-fade-in">
+                            <h3 className="font-bold text-indigo-700 mb-2">Pedagojik Analiz</h3>
+                            <textarea className="w-full h-24 border p-2 rounded mb-2 text-sm" placeholder="Sınıf içi durumu yazın..." value={pText} onChange={(e)=>setPText(e.target.value)}></textarea>
+                            <button onClick={()=>analyzePedagogy(pText)} disabled={isAnalyzing} className="bg-indigo-600 text-white w-full py-2 rounded font-bold mb-2 disabled:opacity-50">{isAnalyzing ? 'Analiz Ediliyor...' : 'Analiz Et'}</button>
+                            {analysisResult && <div className="bg-gray-50 p-3 rounded text-sm text-gray-800 whitespace-pre-wrap max-h-60 overflow-y-auto">{analysisResult}</div>}
+                            <button onClick={()=>setActiveTool(null)} className="text-gray-500 text-sm underline w-full mt-2">Kapat</button>
+                        </div>
+                    )}
+                    {activeTool === 'scoreCalc' && (
+                        <div className="bg-white p-4 rounded-xl shadow border border-violet-200 mb-4">
+                            <h3 className="font-bold text-violet-700 mb-2">Puan Hesapla</h3>
+                            <div className="grid grid-cols-2 gap-2 mb-2">
+                                <input type="number" placeholder="GY" className="border p-2 rounded" onChange={e=>setScoreInputs({...scoreInputs, gy: e.target.value})}/>
+                                <input type="number" placeholder="GK" className="border p-2 rounded" onChange={e=>setScoreInputs({...scoreInputs, gk: e.target.value})}/>
+                                <input type="number" placeholder="Eğitim" className="border p-2 rounded" onChange={e=>setScoreInputs({...scoreInputs, egt: e.target.value})}/>
+                                <input type="number" placeholder="ÖABT" className="border p-2 rounded" onChange={e=>setScoreInputs({...scoreInputs, oabt: e.target.value})}/>
+                            </div>
+                            <button onClick={calculateScore} className="bg-violet-600 text-white w-full py-2 rounded font-bold">Hesapla</button>
+                            {calculatedScore && <div className="text-center font-bold text-xl text-violet-800 mt-2">{calculatedScore}</div>}
+                            <button onClick={()=>setActiveTool(null)} className="text-gray-500 text-sm underline w-full">Kapat</button>
+                        </div>
+                    )}
+                    {activeTool === 'timer' && (
+                         <div className="bg-white p-6 rounded-xl shadow-lg border border-orange-200 mb-6 text-center">
+                             <h3 className="font-bold text-lg mb-2 text-orange-700">Kronometre</h3>
+                             <div className="text-5xl font-mono text-gray-800 mb-6">{Math.floor(stopwatch / 60).toString().padStart(2, '0')}:{ (stopwatch % 60).toString().padStart(2, '0') }</div>
+                             <div className="flex justify-center gap-3">
+                                 <button onClick={()=>setIsTimerRunning(!isTimerRunning)} className={`px-6 py-3 rounded-lg font-bold text-white ${isTimerRunning ? 'bg-red-500' : 'bg-green-500'}`}>{isTimerRunning ? 'Durdur' : 'Başlat'}</button>
+                                 <button onClick={()=>{setIsTimerRunning(false); setStopwatch(0);}} className="px-6 py-3 rounded-lg font-bold bg-gray-200 text-gray-700">Sıfırla</button>
+                             </div>
+                             <button onClick={()=>setActiveTool(null)} className="mt-4 text-sm text-gray-500 underline block mx-auto p-2">Kapat</button>
+                         </div>
+                     )}
+                    {activeTool === 'notepad' && (
+                        <div className="bg-white p-4 rounded-xl shadow border border-yellow-200 mb-4">
+                            <h3 className="font-bold text-yellow-700 mb-2">Not Defteri</h3>
+                            <textarea className="w-full h-32 border p-2 rounded mb-2" value={notes} onChange={(e)=>saveNote(e.target.value)}></textarea>
+                            <button onClick={()=>setActiveTool(null)} className="text-gray-500 text-sm underline w-full">Kapat</button>
+                        </div>
+                    )}
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                        {toolsData.map(t => {
+                            return (
+                                <div key={t.id} onClick={() => t.type==='internal' ? setActiveTool(t.action) : window.open(t.link, '_blank')} className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center gap-2 active:bg-gray-50 cursor-pointer h-24">
+                                    <Icon name={t.iconName} size={24} className="text-indigo-500"/>
+                                    <span className="text-xs font-bold text-gray-700">{t.title}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MAIN APP ---
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [userApiKey, setUserApiKey] = useState("");
+            const [user, setUser] = useState(null);
+            const [firebaseServices, setFirebaseServices] = useState(null);
+            const [dailyTasks, setDailyTasks] = useState([]);
+            const [completedTopics, setCompletedTopics] = useState({});
+            const [mistakes, setMistakes] = useState([]);
+            
+            // Quiz Logic
+            const [quizState, setQuizState] = useState('idle');
+            const [quizQuestions, setQuizQuestions] = useState([]);
+            const [currentQIndex, setCurrentQIndex] = useState(0);
+            const [userAnswers, setUserAnswers] = useState({});
+            const [quizScore, setQuizScore] = useState(0);
+            const [examType, setExamType] = useState('OABT');
+            const [questionCount, setQuestionCount] = useState(10);
+            const [activeTool, setActiveTool] = useState(null);
+            const [scoreInputs, setScoreInputs] = useState({ gy: 0, gk: 0, egt: 0, oabt: 0 });
+            const [calculatedScore, setCalculatedScore] = useState(null);
+            const [stopwatch, setStopwatch] = useState(0);
+            const [isTimerRunning, setIsTimerRunning] = useState(false);
+            const [notes, setNotes] = useState("");
+            const [chatMessages, setChatMessages] = useState([{ role: 'model', text: "Merhaba Hocam! Müfredat, İzle/Oku linkleri ve Deneme sınavı hepsi emrinde." }]);
+            const [inputMsg, setInputMsg] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [timeRemaining, setTimeRemaining] = useState(calculateTimeRemaining());
+            const [dailyQuote, setDailyQuote] = useState("");
+            const [flashcardData, setFlashcardData] = useState(null);
+            const [showFlashcardModal, setShowFlashcardModal] = useState(false);
+            const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
+            
+            const [summaryContent, setSummaryContent] = useState("");
+            const [showSummaryModal, setShowSummaryModal] = useState(false);
+            const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+            const [analysisResult, setAnalysisResult] = useState("");
+            const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+            const chatEndRef = useRef(null);
+            const timerRef = useRef(null);
+
+            useEffect(() => {
+                const init = async () => {
+                    let attempts = 0;
+                    while (!window.firebaseModules && attempts < 20) { await new Promise(r => setTimeout(r, 200)); attempts++; }
+                    if (window.firebaseModules) {
+                        const { initializeApp, getAuth, signInAnonymously, getFirestore, collection, onSnapshot, signInWithCustomToken } = window.firebaseModules;
+                        const config = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                        try {
+                            const app = initializeApp(config);
+                            const auth = getAuth(app);
+                            const db = getFirestore(app);
+                            setFirebaseServices({ auth, db });
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+                            else await signInAnonymously(auth);
+                            window.firebaseModules.onAuthStateChanged(auth, (u) => {
+                                setUser(u);
+                                if(u) {
+                                    onSnapshot(collection(db, 'artifacts', appId, 'users', u.uid, 'tasks'), (s) => setDailyTasks(s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.createdAt - a.createdAt)));
+                                    onSnapshot(collection(db, 'artifacts', appId, 'users', u.uid, 'progress'), (s) => {
+                                        const progress = {}; s.docs.forEach(doc => { progress[doc.id] = doc.data().completed; }); setCompletedTopics(progress);
+                                    });
+                                    onSnapshot(collection(db, 'artifacts', appId, 'users', u.uid, 'mistakes'), (s) => setMistakes(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                                }
+                            });
+                        } catch (e) { console.error("FB Init Error", e); }
+                    }
+                };
+                init();
+                const savedKey = localStorage.getItem('gemini_api_key');
+                if(savedKey) setUserApiKey(savedKey);
+                const savedNotes = localStorage.getItem('kpssNotes');
+                if(savedNotes) setNotes(savedNotes);
+                const timer = setInterval(() => setTimeRemaining(calculateTimeRemaining()), 1000);
+                const q = ["Başarı, her gün tekrarlanan küçük çabaların toplamıdır.", "Bugün çalışmadığın yerden yarın soru çıkabilir.", "15 yıllık emek zayi olmaz.", "O sene bu sene!"];
+                setDailyQuote(q[Math.floor(Math.random() * q.length)]);
+                return () => clearInterval(timer);
+            }, []);
+
+            useEffect(() => {
+                if (isTimerRunning) timerRef.current = setInterval(() => setStopwatch(prev => prev + 1), 1000);
+                else clearInterval(timerRef.current);
+                return () => clearInterval(timerRef.current);
+            }, [isTimerRunning]);
+
+            useEffect(() => { if(activeTab === 'ai') chatEndRef.current?.scrollIntoView({behavior:'smooth'}); }, [chatMessages, activeTab]);
+
+            const getEffectiveKey = () => userApiKey || DEFAULT_API_KEY;
+            
+            const callGemini = async (prompt, isJson = false) => {
+                const apiKey = getEffectiveKey();
+                if (!apiKey) throw new Error("NO_KEY");
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: isJson ? { responseMimeType: "application/json" } : {} };
+                const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+                if(!res.ok) throw new Error("API_ERR");
+                const data = await res.json();
+                return data.candidates[0].content.parts[0].text;
+            };
+
+            const toggleTopic = async (subj, status) => { if(firebaseServices) await window.firebaseModules.setDoc(window.firebaseModules.doc(firebaseServices.db, 'artifacts', appId, 'users', user.uid, 'progress', subj), { completed: !status }, { merge: true }); };
+            
+            const openLink = (topic, type) => {
+                const url = type === 'youtube' 
+                    ? `https://www.youtube.com/results?search_query=${encodeURIComponent(`KPSS Okul Öncesi ${topic} konu anlatımı`)}`
+                    : `https://www.google.com/search?q=${encodeURIComponent(`KPSS Okul Öncesi ${topic} ders notları pdf`)}`;
+                window.open(url, '_blank');
+            };
+
+            const generateFlashcard = async (subject) => {
+                if (!getEffectiveKey()) { alert("API Anahtarı gerekli"); setActiveTab('tools'); setActiveTool('apiKey'); return; }
+                setIsLoading(true); setShowFlashcardModal(true); setFlashcardData(null); setIsFlashcardFlipped(false);
+                try {
+                    const text = await callGemini(`Konu: '${subject}'. Kart hazırla. JSON: {"term":"Kavram","definition":"Tanım","mnemonic":"Kodlama"}`, true);
+                    setFlashcardData(cleanAndParseJSON(text));
+                } catch(e) { setShowFlashcardModal(false); alert("Hata."); } finally { setIsLoading(false); }
+            };
+
+            const generateSummary = async (topic) => {
+                if (!getEffectiveKey()) { alert("API Anahtarı gerekli"); setActiveTab('tools'); setActiveTool('apiKey'); return; }
+                setIsSummaryLoading(true); setShowSummaryModal(true); setSummaryContent("");
+                try {
+                    const text = await callGemini(`KPSS Okul Öncesi Öğretmenliği için '${topic}' konusunu maddeler halinde, sınavda çıkabilecek önemli noktaları vurgulayarak özetle.`, false);
+                    setSummaryContent(text);
+                } catch(e) { setSummaryContent("Özet çıkarılamadı. API Anahtarını kontrol edin."); } finally { setIsSummaryLoading(false); }
+            };
+
+            const analyzeQuestion = async (text) => {
+                if(!text) return;
+                if (!getEffectiveKey()) { alert("API Anahtarı gerekli"); return; }
+                setIsAnalyzing(true);
+                try {
+                    const res = await callGemini(`Aşağıdaki KPSS sorusunu çöz ve detaylıca açıkla:\n\n"${text}"`, false);
+                    setAnalysisResult(res);
+                } catch(e) { setAnalysisResult("Hata oluştu."); } finally { setIsAnalyzing(false); }
+            };
+
+            const analyzePedagogy = async (text) => {
+                if(!text) return;
+                if (!getEffectiveKey()) { alert("API Anahtarı gerekli"); return; }
+                setIsAnalyzing(true);
+                try {
+                    const res = await callGemini(`Sen uzman bir eğitimcisin. Aşağıdaki sınıf içi durumu pedagojik formasyon ilkelerine, gelişim ve öğrenme psikolojisine göre analiz et ve öğretmenin yapması gereken en uygun davranışı açıkla: "${text}"`, false);
+                    setAnalysisResult(res);
+                } catch(e) { setAnalysisResult("Analiz edilemedi."); } finally { setIsAnalyzing(false); }
+            };
+
+            const startExam = async () => {
+                if (!getEffectiveKey()) { alert("Lütfen Araçlar'dan API anahtarını gir."); setActiveTab('tools'); setActiveTool('apiKey'); return; }
+                setQuizState('loading');
+                const topics = examType === 'OABT' ? fullCurriculum.OABT.map(i=>i.subject).join(", ") : fullCurriculum.AGS.map(i=>i.subject).join(", ");
+                try {
+                    const prompt = `KPSS ${examType} için ${questionCount} adet soru yaz. Konular: ${topics.substring(0, 500)}... ANATOMİ YOK. JSON Array formatında: [{"question":"...","options":["A","B","C","D","E"],"correctIndex":0,"explanation":"..."}]`;
+                    const text = await callGemini(prompt, true);
+                    const questions = cleanAndParseJSON(text);
+                    if (!questions || !Array.isArray(questions)) throw new Error("Format");
+                    setQuizQuestions(questions);
+                    setCurrentQIndex(0); setUserAnswers({}); setQuizState('active');
+                } catch (e) { alert("Sınav hatası: " + e.message); setQuizState('idle'); }
+            };
+
+            const generateDailyTasks = async () => {
+                if (!getEffectiveKey()) { alert("API Anahtarı gerekli"); setActiveTab('tools'); setActiveTool('apiKey'); return; }
+                setIsLoading(true);
+                try {
+                    const text = await callGemini(`KPSS Günlük Plan (3 madde). JSON Array: ["Görev 1", "Görev 2"]`, true);
+                    const tasks = cleanAndParseJSON(text);
+                    if(tasks && firebaseServices) {
+                        for(const t of tasks) await window.firebaseModules.addDoc(window.firebaseModules.collection(firebaseServices.db, 'artifacts', appId, 'users', user.uid, 'tasks'), { text: t, completed: false, createdAt: window.firebaseModules.serverTimestamp() });
+                    }
+                } catch(e) { alert("Hata"); } finally { setIsLoading(false); }
+            };
+
+            const toggleTask = async (id, status) => { if(firebaseServices) await window.firebaseModules.updateDoc(window.firebaseModules.doc(firebaseServices.db, 'artifacts', appId, 'users', user.uid, 'tasks', id), { completed: !status }); };
+            const deleteTask = async (id) => { if(firebaseServices) await window.firebaseModules.deleteDoc(window.firebaseModules.doc(firebaseServices.db, 'artifacts', appId, 'users', user.uid, 'tasks', id)); };
+            const saveMistakes = async (newMistakes) => { if (user && firebaseServices) for (const m of newMistakes) await window.firebaseModules.addDoc(window.firebaseModules.collection(firebaseServices.db, 'artifacts', appId, 'users', user.uid, 'mistakes'), { ...m, createdAt: window.firebaseModules.serverTimestamp() }); };
+            const deleteMistake = async (id) => { if(firebaseServices) await window.firebaseModules.deleteDoc(window.firebaseModules.doc(firebaseServices.db, 'artifacts', appId, 'users', user.uid, 'mistakes', id)); };
+
+            const sendMessageToAI = async () => {
+                if (!inputMsg.trim()) return;
+                const userText = inputMsg; setChatMessages(prev => [...prev, { role: 'user', text: userText }]); setInputMsg(''); setIsLoading(true);
+                try {
+                    const text = await callGemini(userText);
+                    setChatMessages(prev => [...prev, { role: 'model', text: text }]);
+                } catch (error) { setChatMessages(prev => [...prev, { role: 'model', text: "Hata." }]); } finally { setIsLoading(false); }
+            };
+
+            const saveApiKey = (val) => { setUserApiKey(val); localStorage.setItem('gemini_api_key', val); };
+            const saveNote = (val) => { setNotes(val); localStorage.setItem('kpssNotes', val); };
+            const calculateScore = () => {
+                const { gy, gk, egt, oabt } = scoreInputs;
+                setCalculatedScore((40 + (0.3 * (parseFloat(gy) + parseFloat(gk))) + (0.3 * parseFloat(egt)) + (0.6 * parseFloat(oabt))).toFixed(2));
+            };
+
+            return (
+                <div className="flex flex-col h-[100dvh] overflow-hidden bg-gray-50 md:flex-row">
+                    {/* PC Sidebar */}
+                    <div className="hidden md:flex flex-col w-64 bg-white border-r h-full p-4 justify-between">
+                        <div>
+                            <h1 className="text-2xl font-bold text-center text-indigo-700 mb-8 brand-font">Barış Akademi</h1>
+                            <nav className="flex flex-col gap-2">
+                                <button onClick={()=>setActiveTab('dashboard')} className={`p-3 rounded-lg text-left font-bold flex items-center gap-3 ${activeTab==='dashboard'?'bg-indigo-50 text-indigo-700':'text-gray-500'}`}><Icon name="Home" size={20}/> Panel</button>
+                                <button onClick={()=>setActiveTab('planner')} className={`p-3 rounded-lg text-left font-bold flex items-center gap-3 ${activeTab==='planner'?'bg-emerald-50 text-emerald-700':'text-gray-500'}`}><Icon name="List" size={20}/> Plan</button>
+                                <button onClick={()=>setActiveTab('syllabus')} className={`p-3 rounded-lg text-left font-bold flex items-center gap-3 ${activeTab==='syllabus'?'bg-blue-50 text-blue-700':'text-gray-500'}`}><Icon name="BookOpen" size={20}/> Müfredat</button>
+                                <button onClick={()=>setActiveTab('smartTest')} className={`p-3 rounded-lg text-left font-bold flex items-center gap-3 ${activeTab==='smartTest'?'bg-indigo-50 text-indigo-700':'text-gray-500'}`}><Icon name="Target" size={20}/> Pekiştirme</button>
+                                <button onClick={()=>setActiveTab('mock')} className={`p-3 rounded-lg text-left font-bold flex items-center gap-3 ${activeTab==='mock'?'bg-orange-50 text-orange-700':'text-gray-500'}`}><Icon name="Play" size={20}/> Deneme</button>
+                                <button onClick={()=>setActiveTab('mistakes')} className={`p-3 rounded-lg text-left font-bold flex items-center gap-3 ${activeTab==='mistakes'?'bg-red-50 text-red-700':'text-gray-500'}`}><Icon name="AlertCircle" size={20}/> Hatalar</button>
+                                <button onClick={()=>setActiveTab('tools')} className={`p-3 rounded-lg text-left font-bold flex items-center gap-3 ${activeTab==='tools'?'bg-violet-50 text-violet-700':'text-gray-500'}`}><Icon name="Tool" size={20}/> Araçlar</button>
+                                <button onClick={()=>setActiveTab('ai')} className={`p-3 rounded-lg text-left font-bold flex items-center gap-3 ${activeTab==='ai'?'bg-indigo-50 text-indigo-700':'text-gray-500'}`}><Icon name="Brain" size={20}/> AI Koç</button>
+                            </nav>
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 overflow-hidden relative">
+                        {activeTab === 'dashboard' && <Dashboard dailyQuote={dailyQuote} timeRemaining={timeRemaining} dailyTasks={dailyTasks} completedTopics={completedTopics} setActiveTab={setActiveTab} />}
+                        {activeTab === 'syllabus' && <Syllabus completedTopics={completedTopics} toggleTopic={toggleTopic} openLink={openLink} generateFlashcard={generateFlashcard} generateSummary={generateSummary} />}
+                        {activeTab === 'planner' && <Planner dailyTasks={dailyTasks} generateDailyTasks={generateDailyTasks} toggleTask={toggleTask} deleteTask={deleteTask} isLoading={isLoading} />}
+                        {activeTab === 'smartTest' && <SmartTest getEffectiveKey={getEffectiveKey} setActiveTab={setActiveTab} setActiveTool={setActiveTool} saveMistakes={saveMistakes} />}
+                        {activeTab === 'mock' && <ExamView quizState={quizState} setQuizState={setQuizState} examType={examType} setExamType={setExamType} questionCount={questionCount} setQuestionCount={setQuestionCount} startExam={startExam} currentQIndex={currentQIndex} setCurrentQIndex={setCurrentQIndex} quizQuestions={quizQuestions} userAnswers={userAnswers} setUserAnswers={setUserAnswers} getEffectiveKey={getEffectiveKey} setActiveTab={setActiveTab} setActiveTool={setActiveTool} saveMistakes={saveMistakes} />}
+                        {activeTab === 'mistakes' && <MistakesView mistakes={mistakes} deleteMistake={deleteMistake} />}
+                        {activeTab === 'tools' && <Tools activeTool={activeTool} setActiveTool={setActiveTool} toolsData={toolsData} userApiKey={userApiKey} saveApiKey={saveApiKey} notes={notes} saveNote={saveNote} scoreInputs={scoreInputs} setScoreInputs={setScoreInputs} calculateScore={calculateScore} calculatedScore={calculatedScore} stopwatch={stopwatch} setIsTimerRunning={setIsTimerRunning} isTimerRunning={isTimerRunning} analyzeQuestion={analyzeQuestion} isAnalyzing={isAnalyzing} analysisResult={analysisResult} analyzePedagogy={analyzePedagogy} />}
+                        {activeTab === 'ai' && (
+                            <div className="flex flex-col h-[calc(100vh-80px)] md:h-full bg-white pb-20 md:pb-0">
+                                <div className="bg-gray-50 p-4 border-b font-bold">AI Koç</div>
+                                <div className="flex-1 overflow-y-auto p-4 smooth-scroll">
+                                    {chatMessages.map((m,i)=><div key={i} className={`mb-2 p-2 rounded ${m.role==='user'?'bg-indigo-100 self-end':'bg-gray-100'}`}>{m.text}</div>)}
+                                    {isLoading && <div className="text-xs text-gray-400">...</div>}
+                                    <div ref={chatEndRef}/>
+                                </div>
+                                <div className="p-3 border-t flex gap-2">
+                                    <input value={inputMsg} onChange={e=>setInputMsg(e.target.value)} className="flex-1 border p-2 rounded" placeholder="Sor..." />
+                                    <button onClick={sendMessageToAI} className="bg-indigo-600 text-white p-2 rounded">Gönder</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="md:hidden fixed bottom-0 w-full bg-white border-t p-2 flex justify-around z-50 overflow-x-auto hide-scrollbar gap-2 px-4">
+                        {['dashboard','syllabus','smartTest','mock','mistakes','tools'].map(t=><button key={t} onClick={()=>setActiveTab(t)} className={`flex flex-col items-center p-1 min-w-[50px] ${activeTab===t?'text-indigo-600':'text-gray-400'}`}><Icon name={t==='dashboard'?'Home':t==='mock'?'Play':t==='tools'?'Tool':t==='mistakes'?'AlertCircle':t==='smartTest'?'Target':'BookOpen'} size={22}/><span className="capitalize text-[10px] font-bold">{t==='dashboard'?'Ev':t==='mock'?'Sınav':t==='tools'?'Araç':t==='mistakes'?'Hata':t==='smartTest'?'Pekiştir':'Konu'}</span></button>)}
+                    </div>
+                    <SummaryModal isOpen={showSummaryModal} onClose={()=>setShowSummaryModal(false)} content={summaryContent} isLoading={isSummaryLoading} />
+                    {showFlashcardModal && (
+                        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowFlashcardModal(false)}>
+                            <div className="w-full max-w-md perspective-1000" onClick={e => e.stopPropagation()}>
+                                {isLoading ? (
+                                    <div className="bg-white rounded-xl p-8 flex flex-col items-center justify-center min-h-[300px]">
+                                        <div className="w-12 h-12 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin mb-4"></div>
+                                        <p className="text-gray-600 font-bold animate-pulse">Kart Hazırlanıyor...</p>
+                                    </div>
+                                ) : (
+                                    flashcardData && (
+                                        <div className={`flip-card-container w-full h-[400px] cursor-pointer ${isFlashcardFlipped ? 'flipped' : ''}`} onClick={() => setIsFlashcardFlipped(!isFlashcardFlipped)}>
+                                            <div className="flip-card-inner relative w-full h-full text-center transition-transform duration-700 transform-style-3d">
+                                                <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-white to-yellow-50 border-4 border-yellow-200 rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8">
+                                                    <div className="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mb-6 shadow-sm"><Icon name="Brain" size={40} /></div>
+                                                    <h3 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">{flashcardData.term}</h3>
+                                                    <p className="text-sm text-gray-500 mt-4 animate-bounce">(Cevabı görmek için tıkla)</p>
+                                                </div>
+                                                <div className="absolute w-full h-full backface-hidden rotate-y-180 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8">
+                                                    <h4 className="text-xl font-bold mb-4 border-b border-white/20 pb-2 w-full">{flashcardData.term}</h4>
+                                                    <p className="text-lg mb-6 leading-relaxed overflow-y-auto max-h-[150px]">{flashcardData.definition}</p>
+                                                    <div className="bg-white/10 rounded-xl p-4 w-full"><span className="text-xs uppercase tracking-widest text-yellow-300 font-bold block mb-1">KODLAMA</span><p className="italic text-sm">"{flashcardData.mnemonic}"</p></div>
+                                                    <button className="mt-6 text-sm flex items-center gap-1 text-gray-300 hover:text-white"><Icon name="Rotate" size={16} /> Çevir</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
