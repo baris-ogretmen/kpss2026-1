@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#f0f9ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Barış Akademi Atölyesi - Full Müfredat</title>
+    <title>Barış Akademi Atölyesi - Pro</title>
     
     <!-- React & Tailwind -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -24,7 +24,7 @@
     </script>
 
     <style>
-        body { font-family: 'Nunito', sans-serif; background-color: #f0f9ff; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Nunito', sans-serif; background-color: #f0f9ff; overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
         h1, h2, h3, .brand-font { font-family: 'Fredoka', sans-serif; }
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -46,20 +46,67 @@
     <div id="root">
         <div class="flex h-screen items-center justify-center bg-blue-50 flex-col gap-4">
             <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-            <p class="text-blue-600 font-bold animate-pulse">Barış Akademi Yükleniyor...</p>
+            <p class="text-blue-600 font-bold animate-pulse">Sistem Hazırlanıyor...</p>
         </div>
     </div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'baris-akademi-full-curriculum-v1';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'baris-akademi-manual-fix';
         
-        // --- API KEY (BOŞ) ---
-        const DEFAULT_API_KEY = ""; 
+        // --- DATA CONSTANTS ---
+        const DEFAULT_API_KEY = ""; // Manuel giriş için boş bırakıldı
 
-        // --- ICONS (SVG) ---
+        const quotes = [
+            "Bugün attığın her imza, yarın atanacağın kararnamenin provasıdır.",
+            "KPSS bir zeka sınavı değil, sabır ve strateji sınavıdır.",
+            "15 yıllık tecrüben, 2026'da sana sınıfının kapısını açacak anahtardır.",
+            "Anatomi gitti, yükün hafifledi. Şimdi koşma zamanı!",
+            "Ertelemek, başarının en sinsi düşmanıdır. Şimdi başla."
+        ];
+
+        const fullCurriculum = {
+            OABT: [
+                { subject: "Okul Öncesi Eğitime Giriş", subtopics: ["Tanım ve İlkeler", "Kuramcılar (Froebel, Montessori)", "Kuramcılar (Piaget, Vygotsky, Bruner)", "Türkiye'de Okul Öncesi Tarihi", "Yönetmelik ve Mevzuat"] },
+                { subject: "Psikoloji", subtopics: ["Gelişim İlkeleri", "Bilişsel Gelişim", "Dil Gelişimi", "Sosyal-Duygusal Gelişim", "Kişilik Gelişimi (Freud, Erikson)", "Ahlak Gelişimi", "Öğrenme Psikolojisi"] },
+                { subject: "Anne Çocuk Sağlığı", subtopics: ["Üreme Sağlığı", "Gebelik ve Doğum", "Bebek Bakımı", "Beslenme İlkeleri", "Çocuk Hastalıkları", "Aşılar ve Bağışıklık", "İlk Yardım"] },
+                { subject: "Erken Çocuklukta Drama", subtopics: ["Dramanın Tanımı ve Türleri", "Drama Aşamaları", "Drama Teknikleri", "Liderin Özellikleri", "Drama Planı Hazırlama"] },
+                { subject: "Yaklaşımlar & Programlar", subtopics: ["Montessori Yaklaşımı", "Reggio Emilia", "Waldorf Okulları", "High Scope", "Bank Street", "Head Start", "MEB 2013/2024 Programı"] },
+                { subject: "Alan Eğitimi", subtopics: ["Fen Eğitimi ve Yöntemleri", "Matematik Becerileri", "Müzik Eğitimi (Orff, Kodaly)", "Görsel Sanatlar Gelişimi", "Beden Eğitimi ve Oyun", "Materyal Tasarımı"] },
+                { subject: "Çocuk Edebiyatı", subtopics: ["Çocuk Kitaplarının Nitelikleri", "Edebi Türler", "Dil Gelişimi ve Kitaplar"] },
+                { subject: "Özel Eğitim", subtopics: ["Özel Eğitim İlkeleri", "Engel Grupları", "Kaynaştırma Eğitimi", "Bireyselleştirilmiş Eğitim Programı (BEP)"] },
+                { subject: "Yaratıcılık", subtopics: ["Yaratıcılık Kuramları", "Yaratıcı Düşünme Aşamaları", "Çocukta Yaratıcılığın Gelişimi"] },
+                { subject: "Ruh Sağlığı", subtopics: ["Çocuklarda Uyum Problemleri", "Otizm", "DEHB", "İhmal ve İstismar", "Boşanma ve Çocuk"] }
+            ],
+            Egitim: [
+                { subject: "Gelişim Psikolojisi", subtopics: ["Fiziksel Gelişim", "Bilişsel Gelişim", "Kişilik Gelişimi"] },
+                { subject: "Öğrenme Psikolojisi", subtopics: ["Davranışçı Kuramlar", "Bilişsel Kuramlar", "Sosyal Öğrenme"] },
+                { subject: "ÖYT", subtopics: ["Öğretim İlkeleri", "Modeller (Tam Öğrenme vb.)", "Stratejiler", "Teknikler"] },
+                { subject: "Program Geliştirme", subtopics: ["Program Türleri", "Program Geliştirme Süreci"] },
+                { subject: "Ölçme", subtopics: ["Temel Kavramlar", "Güvenirlik/Geçerlik", "Test İstatistikleri"] },
+                { subject: "Rehberlik", subtopics: ["Rehberlik Türleri", "Hizmet Alanları", "Bireyi Tanıma"] }
+            ],
+            AGS: [
+                { subject: "Türkçe", subtopics: ["Sözcükte Anlam", "Cümlede Anlam", "Paragraf", "Sözel Mantık", "Yazım Kuralları"] },
+                { subject: "Matematik", subtopics: ["Temel Kavramlar", "Rasyonel Sayılar", "Problemler", "Sayısal Mantık", "Geometri"] },
+                { subject: "Tarih", subtopics: ["İslamiyet Öncesi Türk Tarihi", "Türk İslam Tarihi", "Osmanlı Devleti", "Kurtuluş Savaşı", "İnkılaplar", "Çağdaş Türk Dünyası"] },
+                { subject: "Coğrafya", subtopics: ["Türkiye'nin Fiziki Coğrafyası", "Beşeri Coğrafya", "Ekonomik Coğrafya"] },
+                { subject: "Vatandaşlık", subtopics: ["Hukukun Temel Kavramları", "Anayasa Hukuku (1982)", "Yasama, Yürütme, Yargı", "İdare Hukuku", "Uluslararası Kuruluşlar"] }
+            ]
+        };
+
+        const toolsData = [
+            { id: 9, title: "API Anahtarı", desc: "Kayıtlı", iconName: "Key", type: "internal", action: "apiKey" },
+            { id: 1, title: "Puan Hesapla", desc: "Tahmini P121", iconName: "Calculator", type: "internal", action: "scoreCalc" },
+            { id: 2, title: "Kronometre", desc: "Deneme Süresi", iconName: "Timer", type: "internal", action: "timer" },
+            { id: 4, title: "Not Defteri", desc: "Hızlı notlar", iconName: "Edit3", type: "internal", action: "notepad" },
+            { id: 7, title: "MEB Müfredat", desc: "Resmi Kaynak", link: "https://tegm.meb.gov.tr/", iconName: "BookOpen" },
+            { id: 8, title: "ÖSYM AİS", desc: "Başvuru", link: "https://ais.osym.gov.tr/", iconName: "Globe" }
+        ];
+
+        // --- ICONS ---
         const Icon = ({ name, size=20, className }) => {
-            const icons = {
+             const icons = {
                 Home: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
                 List: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
                 BookOpen: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
@@ -81,63 +128,11 @@
                 Globe: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
                 HelpCircle: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
                 Lightbulb: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>,
-                AlertCircle: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                AlertCircle: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+                Volume2: <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
             };
             return icons[name] || null;
         };
-
-        // --- DATA ---
-        const quotes = ["Bugün çalış, yarın kazan.", "Hedefine odaklan.", "İnanmak başarmanın yarısıdır.", "Kazanmak için buradasın!", "15 yıllık emeğin karşılığını alma vakti.", "Her gün küçük bir adım, büyük zafere götürür."];
-        
-        // GÜNCELLENMİŞ VE GENİŞLETİLMİŞ MÜFREDAT
-        const fullCurriculum = {
-            OABT: [
-                { subject: "Okul Öncesi Eğitime Giriş", subtopics: ["Tanım, Amaç ve İlkeler", "Eğitim Kuramcıları (Froebel, Montessori, Piaget, Vygotsky, Bruner)", "Türkiye'de ve Dünyada Tarihsel Gelişim", "Yönetmelik ve Mevzuat", "Okul Öncesi Eğitimin Temel Özellikleri"] },
-                { subject: "İnsan Anatomisi (Kaldırıldı)", subtopics: ["Müfredat dışıdır, sorumlu değilsiniz."] },
-                { subject: "Anne Çocuk Sağlığı ve İlk Yardım", subtopics: ["Kadın Üreme Sağlığı ve Aile Planlaması", "Gebelik, Doğum ve Lohusalık", "Bebek Bakımı ve Beslenmesi", "0-6 Yaş Gelişimi ve İzlenmesi", "Çocuk Hastalıkları ve Aşılar", "Temel İlk Yardım Uygulamaları", "Bulaşıcı Hastalıklar"] },
-                { subject: "Çocuk Ruh Sağlığı", subtopics: ["Ruh Sağlığının Tanımı", "Uyum ve Davranış Bozuklukları (Tırnak yeme, Alt ıslatma vb.)", "Otizm Spektrum Bozukluğu", "Dikkat Eksikliği ve Hiperaktivite", "Özel Öğrenme Güçlüğü", "İhmal ve İstismar", "Boşanma ve Çocuk", "Çocukta Cinsel Gelişim ve Eğitim"] },
-                { subject: "Erken Çocuklukta Drama", subtopics: ["Dramanın Tanımı ve Tarihçesi", "Drama Türleri (Yaratıcı, Eğitici, Psikodrama)", "Drama Aşamaları (Isınma, Canlandırma, Değerlendirme)", "Drama Teknikleri (Rol Oynama, Doğaçlama, Donuk İmge vb.)", "Liderin Özellikleri ve Rolü", "Drama Planı Hazırlama"] },
-                { subject: "Yaklaşımlar & Programlar", subtopics: ["Montessori Yaklaşımı", "Reggio Emilia Yaklaşımı", "Waldorf Yaklaşımı", "High Scope Yaklaşımı", "Bank Street", "Head Start", "PYP (İlk Yıllar Programı)", "Orman Okulları", "MEB 2013/2024 Okul Öncesi Eğitim Programı"] },
-                { subject: "Alan Eğitimi: Fen Eğitimi", subtopics: ["Fen Eğitiminin Amaçları", "Bilimsel Süreç Becerileri", "Fen Eğitiminde Yöntem ve Teknikler", "Fen Doğa Köşesi ve Materyalleri"] },
-                { subject: "Alan Eğitimi: Matematik Eğitimi", subtopics: ["Matematik Becerileri (Sınıflama, Sıralama, Eşleştirme, Örüntü)", "Sayı Kavramı ve İşlemler", "Geometrik Şekiller ve Uzamsal Algı", "Ölçme", "Matematik Eğitiminde Yöntemler"] },
-                { subject: "Alan Eğitimi: Müzik Eğitimi", subtopics: ["Müzik Eğitiminin Önemi ve Amaçları", "Müzik Etkinlikleri (Ses Dinleme, Şarkı Söyleme, Ritim)", "Müzik Öğretim Yöntemleri (Orff, Kodaly, Dalcroze, Suzuki)", "Çocuk Şarkıları ve Seçimi"] },
-                { subject: "Alan Eğitimi: Görsel Sanatlar", subtopics: ["Çocuk Resminin Gelişim Evreleri (Karalama, Şema öncesi vb.)", "Sanat Etkinlikleri ve Yaratıcılık", "Sanat Eğitiminde Yöntemler", "Materyal Kullanımı ve Teknikler"] },
-                { subject: "Alan Eğitimi: Beden Eğitimi ve Oyun", subtopics: ["Psikomotor Gelişim ve Hareket Eğitimi", "Oyunun Tanımı ve Kuramları", "Oyun Evreleri (Parten, Piaget, Smilansky)", "Oyun Materyalleri"] },
-                { subject: "Çocuk Edebiyatı", subtopics: ["Çocuk Edebiyatının Tanımı ve Önemi", "Çocuk Kitaplarının Özellikleri (İç ve Dış Yapı)", "Edebi Türler (Masal, Hikaye, Şiir, Tekerleme, Bilmece)", "Dil Gelişimi ve Kitap İlişkisi", "Resimli Çocuk Kitapları"] },
-                { subject: "Özel Eğitim ve Kaynaştırma", subtopics: ["Özel Eğitimin Tanımı ve İlkeleri", "Engel Grupları (Zihinsel, İşitme, Görme vb.)", "Kaynaştırma Eğitimi ve Destek Özel Eğitim Hizmetleri", "Bireyselleştirilmiş Eğitim Programı (BEP)", "Erken Müdahale"] },
-                { subject: "Yaratıcılık", subtopics: ["Yaratıcılık Kuramları", "Yaratıcı Düşünme Süreci", "Yaratıcılığı Engelleyen ve Destekleyen Faktörler", "Çocukta Yaratıcılığın Gelişimi"] },
-                { subject: "İlköğretime Hazırlık", subtopics: ["Okul Olgunluğu", "İlkokula Hazırlık Becerileri", "Okuma Yazmaya Hazırlık Çalışmaları", "Ailenin Rolü"] },
-                { subject: "Anne Baba Eğitimi", subtopics: ["Aile Eğitimi Modelleri", "Aile Katılımı Çalışmaları", "Anne Baba Tutumları", "İletişim Becerileri"] }
-            ],
-            Egitim: [
-                { subject: "Gelişim Psikolojisi", subtopics: ["Gelişimin Temel Kavramları", "Fiziksel ve Psikomotor Gelişim", "Bilişsel Gelişim (Piaget, Vygotsky, Bruner)", "Kişilik Gelişimi (Freud, Erikson, Rogers)", "Ahlak Gelişimi (Kohlberg, Piaget)", "Dil Gelişimi"] },
-                { subject: "Öğrenme Psikolojisi", subtopics: ["Öğrenmeyi Etkileyen Faktörler", "Davranışçı Kuramlar (Klasik, Edimsel)", "Bilişsel Ağırlıklı Davranışçı (Bandura)", "Bilişsel Kuramlar (Gestalt, Bilgiyi İşleme)", "Hümanist Yaklaşım"] },
-                { subject: "ÖYT", subtopics: ["Öğretim İlkeleri", "Öğretim Modelleri (Tam Öğrenme, Yapılandırmacılık vb.)", "Öğretim Stratejileri (Sunuş, Buluş, Araştırma)", "Öğretim Yöntemleri", "Öğretim Teknikleri", "Kavram Öğretimi"] },
-                { subject: "Program Geliştirme", subtopics: ["Eğitimde Temel Kavramlar", "Program Türleri", "Program Geliştirme Süreci", "Program Tasarım Yaklaşımları", "Hedef, İçerik, Eğitim Durumları, Sınama"] },
-                { subject: "Ölçme ve Değerlendirme", subtopics: ["Ölçmede Temel Kavramlar", "Hata Türleri", "Ölçme Araçlarının Özellikleri (Güvenirlik, Geçerlik)", "Ölçme Araçları (Testler)", "İstatistiksel İşlemler"] },
-                { subject: "Rehberlik ve Özel Eğitim", subtopics: ["Rehberlik İlkeleri", "Rehberlik Türleri", "Hizmet Alanları", "Bireyi Tanıma Teknikleri", "Psikolojik Danışma Kuramları", "Özel Eğitim Hizmetleri"] },
-                { subject: "Sınıf Yönetimi", subtopics: ["Sınıf Yönetimi Modelleri", "Sınıfın Fiziksel Düzeni", "İstenmeyen Davranışlar", "Sınıf Kuralları"] },
-                { subject: "Materyal Tasarımı", subtopics: ["Materyal Tasarım İlkeleri", "Görsel Tasarım Ögeleri", "Eğitimde Teknoloji Kullanımı"] }
-            ],
-            AGS: [
-                { subject: "Türkçe", subtopics: ["Sözcükte Anlam", "Cümlede Anlam", "Paragraf Bilgisi", "Sözel Mantık", "Yazım Kuralları", "Noktalama İşaretleri", "Dil Bilgisi"] },
-                { subject: "Matematik", subtopics: ["Temel Kavramlar", "Sayı Basamakları", "Rasyonel Sayılar", "Üslü-Köklü Sayılar", "Problemler", "Sayısal Mantık", "Geometri"] },
-                { subject: "Tarih", subtopics: ["İslamiyet Öncesi Türk Tarihi", "İlk Türk İslam Devletleri", "Osmanlı Kuruluş-Yükselme", "Osmanlı Kültür Medeniyeti", "Osmanlı Dağılma", "Milli Mücadele", "Atatürk İlkeleri ve İnkılapları", "Çağdaş Türk ve Dünya Tarihi"] },
-                { subject: "Coğrafya", subtopics: ["Türkiye'nin Coğrafi Konumu", "Yer Şekilleri", "İklim ve Bitki Örtüsü", "Nüfus ve Yerleşme", "Tarım ve Hayvancılık", "Madenler ve Enerji", "Sanayi, Ulaşım, Turizm"] },
-                { subject: "Vatandaşlık", subtopics: ["Hukukun Temel Kavramları", "Anayasa Hukuku (1982)", "Yasama, Yürütme, Yargı", "İdare Hukuku", "Uluslararası Kuruluşlar", "Güncel Bilgiler"] }
-            ]
-        };
-
-        const toolsData = [
-            { id: 9, title: "API Anahtarı", desc: "ZORUNLU", iconName: "Key", type: "internal", action: "apiKey" },
-            { id: 10, title: "Soru Çözücü", desc: "AI Çözsün", iconName: "HelpCircle", type: "internal", action: "questionSolver" },
-            { id: 11, title: "Pedagojik Analiz", desc: "Durum Analizi", iconName: "Lightbulb", type: "internal", action: "pedagogySolver" },
-            { id: 1, title: "Puan Hesapla", desc: "Tahmini P121", iconName: "Calculator", type: "internal", action: "scoreCalc" },
-            { id: 2, title: "Kronometre", desc: "Süre Tut", iconName: "Timer", type: "internal", action: "timer" },
-            { id: 4, title: "Not Defteri", desc: "Hızlı notlar", iconName: "Edit3", type: "internal", action: "notepad" },
-            { id: 7, title: "MEB Müfredat", desc: "Resmi Kaynak", link: "https://tegm.meb.gov.tr/", iconName: "BookOpen" },
-            { id: 8, title: "ÖSYM AİS", desc: "Başvuru", link: "https://ais.osym.gov.tr/", iconName: "Globe" }
-        ];
 
         // --- HELPER FUNCTIONS ---
         const cleanAndParseJSON = (text) => {
@@ -182,6 +177,17 @@
             if (type === 'youtube') return `https://www.youtube.com/results?search_query=${encodeURIComponent(`KPSS Okul Öncesi ${topic} konu anlatımı`)}`;
             return `https://www.google.com/search?q=${encodeURIComponent(`KPSS Okul Öncesi ${topic} ders notları pdf`)}`;
         };
+        
+        // Base64 to ArrayBuffer for audio playback
+        const base64ToArrayBuffer = (base64) => {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        };
 
         // --- COMPONENTS ---
         const SummaryModal = ({ isOpen, onClose, content, isLoading }) => {
@@ -205,9 +211,12 @@
             );
         };
 
-        const ExamPlayer = ({questions, idx, setIdx, ans, setAns, show, setShow, onFinish}) => (
+        const ExamPlayer = ({questions, idx, setIdx, ans, setAns, show, setShow, onFinish, playTTS}) => (
             <div className="flex flex-col h-full bg-white m-2 rounded-xl shadow overflow-hidden pb-20 md:pb-0">
-                <div className="p-4 bg-gray-50 border-b font-bold flex justify-between"><span>Soru {idx+1}/{questions.length}</span></div>
+                <div className="p-4 bg-gray-50 border-b font-bold flex justify-between items-center">
+                    <span>Soru {idx+1}/{questions.length}</span>
+                    <button onClick={()=>playTTS(questions[idx].question)} className="p-2 bg-indigo-100 text-indigo-600 rounded-full hover:bg-indigo-200"><Icon name="Volume2" size={18}/></button>
+                </div>
                 <div className="flex-1 p-6 overflow-y-auto">
                     <h3 className="font-bold text-lg mb-4">{questions[idx].question}</h3>
                     <div className="space-y-2">{questions[idx].options.map((o,i)=><button key={i} onClick={()=>setAns({...ans,[idx]:i})} className={`w-full text-left p-3 border rounded ${ans[idx]===i?'bg-indigo-50 border-indigo-500':''}`}>{o}</button>)}</div>
@@ -452,7 +461,7 @@
 
             if (quizState === 'idle') {
                 return (
-                    <div className="p-6 flex flex-col items-center justify-center h-full text-center space-y-6">
+                    <div className="p-6 h-full flex flex-col items-center justify-center text-center space-y-6">
                         <div className="bg-white p-6 rounded-3xl shadow-lg border border-indigo-50 w-full max-w-sm">
                             <h2 className="text-2xl font-bold text-gray-800 mb-4">Genel Deneme</h2>
                             {!getEffectiveKey() && <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-xs font-bold border border-red-100">⚠️ Önce "Araçlar"dan API Anahtarı girmelisin.</div>}
@@ -600,7 +609,7 @@
         // --- MAIN APP ---
         const App = () => {
             const [activeTab, setActiveTab] = useState('dashboard');
-            const [userApiKey, setUserApiKey] = useState("");
+            const [userApiKey, setUserApiKey] = useState(DEFAULT_API_KEY);
             const [user, setUser] = useState(null);
             const [firebaseServices, setFirebaseServices] = useState(null);
             const [dailyTasks, setDailyTasks] = useState([]);
@@ -839,7 +848,7 @@
                     <div className="md:hidden fixed bottom-0 w-full bg-white border-t p-2 flex justify-around z-50 overflow-x-auto hide-scrollbar gap-2 px-4">
                         {['dashboard','syllabus','smartTest','mock','mistakes','tools'].map(t=><button key={t} onClick={()=>setActiveTab(t)} className={`flex flex-col items-center p-1 min-w-[50px] ${activeTab===t?'text-indigo-600':'text-gray-400'}`}><Icon name={t==='dashboard'?'Home':t==='mock'?'Play':t==='tools'?'Tool':t==='mistakes'?'AlertCircle':t==='smartTest'?'Target':'BookOpen'} size={22}/><span className="capitalize text-[10px] font-bold">{t==='dashboard'?'Ev':t==='mock'?'Sınav':t==='tools'?'Araç':t==='mistakes'?'Hata':t==='smartTest'?'Pekiştir':'Konu'}</span></button>)}
                     </div>
-                    <SummaryModal isOpen={showSummaryModal} onClose={()=>setShowSummaryModal(false)} content={summaryContent} isLoading={isSummaryLoading} />
+
                     {showFlashcardModal && (
                         <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowFlashcardModal(false)}>
                             <div className="w-full max-w-md perspective-1000" onClick={e => e.stopPropagation()}>
@@ -870,6 +879,8 @@
                             </div>
                         </div>
                     )}
+                    
+                    <SummaryModal isOpen={showSummaryModal} onClose={()=>setShowSummaryModal(false)} content={summaryContent} isLoading={isSummaryLoading} />
                 </div>
             );
         };
